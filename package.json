@@ -12,7 +12,7 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
-    "test": "node --test \"tests/*.test.ts\"",
+    "test": "node --experimental-transform-types --test \"tests/*.test.ts\"",
     "icons": "node scripts/gen-icons.mjs",
     "postinstall": "wxt prepare"
   },
@@ -28,6 +28,7 @@
     "@types/react-dom": "^19.0.2",
     "@wxt-dev/module-react": "^1.1.2",
     "autoprefixer": "^10.4.20",
+    "happy-dom": "^20.11.1",
     "postcss": "^8.5.1",
     "sass-embedded": "^1.83.4",
     "tailwindcss": "^3.4.17",
