@@ -1,11 +1,12 @@
 import cash, { type Cash } from "cash-dom";
 import { descriptionToMarkdown } from "./descriptionToMarkdown.ts";
 import { Options, type AllOptions } from "./options.ts";
-import type {
-  AbilityScores,
-  NameAndContent,
-  NameAndModifier,
-  StatBlock,
+import {
+  abilityMod,
+  type AbilityScores,
+  type NameAndContent,
+  type NameAndModifier,
+  type StatBlock,
 } from "./statblock.ts";
 
 /** Build a StatBlock from a DDB 2024-layout monster page (".mon-stat-block-2024"). */
@@ -106,7 +107,7 @@ function getHitPoints(element: Cash) {
 /** The 2024 Initiative line minus the Dex mod — the extra bonus DDB folded into the listed total. */
 function getInitiativeModifier(element: Cash) {
   const dexScore = getAbility(element, "dex");
-  const dexModifier = Math.floor((dexScore - 10) / 2);
+  const dexModifier = abilityMod(dexScore);
   const initiativeHeader = element
     .find(".mon-stat-block-2024__attribute-label")
     .filter((_, e: Element) => e.innerHTML.trim() == "Initiative")

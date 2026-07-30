@@ -5,7 +5,12 @@
 // `toHit: null` — never a wrong number. The same convention the openfray-compendium
 // mappers follow, so an imported creature reads like an ingested one.
 
-import type { StatBlock, NameAndContent, NameAndModifier } from "./statblock.ts";
+import {
+  abilityMod,
+  type StatBlock,
+  type NameAndContent,
+  type NameAndModifier,
+} from "./statblock.ts";
 import type {
   Ability,
   AbilityScores,
@@ -73,9 +78,6 @@ const DAMAGE_TYPES = new Set<DamageType>([
   "acid", "bludgeoning", "cold", "fire", "force", "lightning",
   "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder",
 ]);
-
-/** The standard 5e modifier for an ability score: floor((score - 10) / 2). */
-const abilityMod = (score: number): number => Math.floor((score - 10) / 2);
 
 /** Lowercase a name and collapse non-alphanumerics into hyphens for ids ("Adult Red Dragon" → "adult-red-dragon"). */
 function slugify(name: string): string {

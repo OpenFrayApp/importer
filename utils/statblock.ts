@@ -54,3 +54,6 @@ export interface StatBlock {
   Player: string;
   ImageURL: string;
 }
+
+/** The standard 5e modifier for an ability score: floor((score - 10) / 2). */
+export const abilityMod = (score: number): number => Math.floor((score - 10) / 2);
