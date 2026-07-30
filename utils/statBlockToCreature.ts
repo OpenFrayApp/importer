@@ -2,9 +2,10 @@
 // Mechanics are pulled from the action prose into structured
 // fields where the wording is unambiguous; the original prose is always kept in
 // `text`, and anything that doesn't parse falls back to a `utility` action with
-// `toHit: null` — never a wrong number. Mirrors openfray/src/compendium/open5e.ts.
+// `toHit: null` — never a wrong number. The same convention the openfray-compendium
+// mappers follow, so an imported creature reads like an ingested one.
 
-import type { StatBlock, NameAndContent, NameAndModifier } from "./statblock";
+import type { StatBlock, NameAndContent, NameAndModifier } from "./statblock.ts";
 import type {
   Ability,
   AbilityScores,
@@ -32,7 +33,7 @@ import type {
   Spellcasting,
   SpellUsage,
   Trait,
-} from "./openfray/schema";
+} from "./openfray/schema.ts";
 
 const ABILITY_BY_NAME: Record<string, Ability> = {
   str: "str", strength: "str",
@@ -73,8 +74,10 @@ const DAMAGE_TYPES = new Set<DamageType>([
   "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder",
 ]);
 
+/** The standard 5e modifier for an ability score: floor((score - 10) / 2). */
 const abilityMod = (score: number): number => Math.floor((score - 10) / 2);
 
+/** Lowercase a name and collapse non-alphanumerics into hyphens for ids ("Adult Red Dragon" → "adult-red-dragon"). */
 function slugify(name: string): string {
   return name
     .toLowerCase()
@@ -91,6 +94,7 @@ function importSource(raw: string | undefined): string {
   return book ? `${book} - Manual import` : "Manual import";
 }
 
+/** A CR string ("1/2", "10") → its numeric value; undefined for blank or dash placeholders. */
 function parseCr(raw: string): number | undefined {
   const s = (raw ?? "").trim();
   if (!s || s === "—" || s === "--") return undefined;
@@ -102,6 +106,7 @@ function parseCr(raw: string): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/** Split "Large Fiend (Devil), Lawful Evil" into size, lowercased type (subtype dropped), and alignment. */
 function parseSizeTypeAlignment(raw: string): {
   size: Size;
   type: string;
@@ -127,6 +132,7 @@ function parseHpFormula(notes: string): string | undefined {
   return m ? normalizeFormula(m[1]) : undefined;
 }
 
+/** Speed entries ("40 ft.", "fly 80 ft. (hover)") → the Speeds map; unlabeled numbers are walk. */
 function parseSpeeds(entries: string[]): Speeds {
   const speed: Speeds = {};
   for (const entry of entries ?? []) {
@@ -144,6 +150,7 @@ function parseSpeeds(entries: string[]): Speeds {
   return speed;
 }
 
+/** Sense entries ("darkvision 120 ft.", "passive Perception 22") → Senses; passive defaults to 10. */
 function parseSenses(entries: string[]): Senses {
   const senses: Senses = { passivePerception: 10 };
   for (const entry of entries ?? []) {
@@ -162,6 +169,7 @@ function parseSenses(entries: string[]): Senses {
   return senses;
 }
 
+/** Saving-throw entries ("Dex +5") → SaveBonuses keyed by ability; undefined when none parse. */
 function parseSaves(entries: NameAndModifier[]): SaveBonuses | undefined {
   const out: SaveBonuses = {};
   for (const { Name, Modifier } of entries ?? []) {
@@ -171,6 +179,7 @@ function parseSaves(entries: NameAndModifier[]): SaveBonuses | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
+/** Skill entries ("Stealth +7") → SkillBonuses keyed by skill; undefined when none parse. */
 function parseSkills(entries: NameAndModifier[]): SkillBonuses | undefined {
   const out: SkillBonuses = {};
   for (const { Name, Modifier } of entries ?? []) {
@@ -180,6 +189,7 @@ function parseSkills(entries: NameAndModifier[]): SkillBonuses | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
+/** Trim entries and drop blanks and "--" placeholders; undefined when nothing remains. */
 function cleanList(items: string[] | undefined): string[] | undefined {
   const out = (items ?? []).map((s) => s.trim()).filter((s) => s && s !== "--");
   return out.length ? out : undefined;
@@ -195,9 +205,9 @@ function parseDamage(text: string): DamageRoll[] | undefined {
     const type = m[2].toLowerCase();
     out.push({
       formula: normalizeFormula(m[1]),
-      // Keep the lowercased word even if it's outside the known set (the schema
-      // type is a string at runtime); known types are validated for editor parity.
-      type: (DAMAGE_TYPES.has(type as DamageType) ? type : type) as DamageType,
+      // Keep the lowercased word even when it's outside the known set — the schema
+      // type is a plain string at runtime, and dropping the damage would be worse.
+      type: type as DamageType,
     });
   }
   return out.length ? out : undefined;
@@ -222,6 +232,7 @@ function parseRecharge(name: string): { recharge?: Recharge; cleanName: string }
   return { cleanName: name.trim() };
 }
 
+/** Parse an attack line, 2014 ("+4 to hit") or 2024 ("Attack Roll: +14"), into kind/toHit/reach/range. */
 function parseAttack(text: string): {
   kind: ActionKind;
   toHit: number;
@@ -252,6 +263,7 @@ function parseAttack(text: string): {
   return { kind, toHit, reach, range };
 }
 
+/** Parse a save line ("DC 13 Constitution saving throw", 2024 order too) into { ability, dc, onSave }. */
 function parseSave(text: string): SaveRequirement | null {
   const m2024 = /([A-Za-z]+)\s+Saving\s+Throw:\s*DC\s+(\d+)/i.exec(text);
   const m2014 = /DC\s+(\d+)\s+([A-Za-z]+)\s+saving throw/i.exec(text);
@@ -301,6 +313,7 @@ const spellRefSource = (edition: Edition): string =>
 // Words kept lowercase in a title-cased spell name ("Cone of Cold", "Wall of Force").
 const MINOR_WORD = new Set(["of", "the", "and", "a", "an", "to", "in", "on", "or", "from", "with"]);
 
+/** Title-case a spell name, keeping minor words ("of", "the") lowercase after the first word. */
 function titleCaseSpell(name: string): string {
   return name
     .split(/\s+/)
@@ -325,6 +338,7 @@ function spellRef(raw: string, refSrc: string): SpellRef {
   };
 }
 
+/** Map raw spell-name fragments to SpellRefs, dropping blanks. */
 const toSpellRefs = (names: string[], refSrc: string): SpellRef[] =>
   names.map((n) => n.trim()).filter(Boolean).map((n) => spellRef(n, refSrc));
 
@@ -356,7 +370,8 @@ function parseSpellGroups(blob: string, refSrc: string): SpellGroup[] {
  * block, and return the remaining (non-spellcasting) entries. The 2024 DDB layout
  * scrapes as a "Spellcasting" lead-in (ability + DC) followed by tier entries
  * ("At Will:", "N/Day:") — which the scraper sometimes merges into one. Mirrors
- * openfray's parseSpellcasting; never parses at runtime in OpenFray, only here.
+ * parseSpellcasting in the openfray-compendium mappers; OpenFray itself never
+ * parses prose at runtime — only importers and ingest do.
  */
 function extractSpellcasting(
   entries: NameAndContent[],
@@ -518,6 +533,7 @@ function toAction(entry: NameAndContent): Action {
   return action;
 }
 
+/** Convert the named entries to Actions; nameless intro paragraphs are dropped. */
 const namedActions = (entries: NameAndContent[] | undefined): Action[] =>
   (entries ?? []).filter((e) => e.Name.trim()).map(toAction);
 
@@ -526,6 +542,7 @@ const namedActions = (entries: NameAndContent[] | undefined): Action[] =>
 // across two <strong>s, at the head of the body ("Misty Step" + "(Costs 2 Actions).").
 const LEGENDARY_COST_RE = /\(Costs?\s+(\d+)\s+Actions?\)\.?/i;
 
+/** Assemble LegendaryActions with per-action costs and the per-round budget from the intro (default 3). */
 function buildLegendary(
   entries: NameAndContent[] | undefined,
 ): LegendaryActions | undefined {
@@ -544,7 +561,7 @@ function buildLegendary(
     });
   if (actions.length === 0) return undefined;
   // The intro paragraph ("can take 3 legendary actions") carries the per-round
-  // budget; Open5e exposes none, so default to 3.
+  // budget; when the page words it differently, 3 is the 5e default.
   const perRound =
     Number(/take\s+(\d+)\s+legendary action/i.exec(all.map((e) => e.Content).join(" "))?.[1]) || 3;
   return { perRound, actions };
@@ -555,6 +572,7 @@ export interface ConvertOptions {
   edition?: Edition;
 }
 
+/** Convert a scraped StatBlock into an OpenFray Creature (edition inferred unless overridden). */
 export function statBlockToCreature(sb: StatBlock, opts: ConvertOptions = {}): Creature {
   const { size, type, alignment } = parseSizeTypeAlignment(sb.Type);
   const abilities: AbilityScores = {

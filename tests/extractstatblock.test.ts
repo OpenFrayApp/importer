@@ -1,34 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { registerHooks } from "node:module";
 import { Window } from "happy-dom";
 import type { AllOptions } from "../utils/options.ts";
-
-// The utils modules are written for WXT's bundler, so plain Node needs three
-// bridges: extensionless relative imports get ".ts" appended, "cash-dom" is
-// pointed at its ESM build (the CJS main exports no `Cash` name), and the
-// type-only names the parsers value-import (AllOptions, the statblock
-// interfaces) get runtime stand-ins appended to their modules.
-registerHooks({
-  resolve(specifier, context, next) {
-    if (specifier === "cash-dom") return next("cash-dom/dist/cash.esm.js", context);
-    try {
-      return next(specifier, context);
-    } catch (error) {
-      if (specifier.startsWith(".")) return next(`${specifier}.ts`, context);
-      throw error;
-    }
-  },
-  load(url, context, next) {
-    const result = next(url, context);
-    const patch = url.endsWith("/utils/options.ts")
-      ? "\nexport const AllOptions = undefined;"
-      : url.endsWith("/utils/statblock.ts")
-        ? "\nexport const StatBlock = undefined, AbilityScores = undefined, NameAndContent = undefined, NameAndModifier = undefined;"
-        : "";
-    return patch ? { ...result, source: `${result.source}${patch}` } : result;
-  },
-});
 
 // cash-dom and extractStatBlock both read the document global, so the happy-dom
 // window must exist before the parser graph is imported below.

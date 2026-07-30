@@ -1,13 +1,14 @@
-import cash, { Cash } from "cash-dom";
-import { descriptionToMarkdown } from "./descriptionToMarkdown";
-import { AllOptions, Options } from "./options";
-import {
+import cash, { type Cash } from "cash-dom";
+import { descriptionToMarkdown } from "./descriptionToMarkdown.ts";
+import { Options, type AllOptions } from "./options.ts";
+import type {
   AbilityScores,
   NameAndContent,
   NameAndModifier,
   StatBlock,
-} from "./statblock";
+} from "./statblock.ts";
 
+/** Build a StatBlock from a DDB 2024-layout monster page (".mon-stat-block-2024"). */
 export function get2024StatBlock(
   options: AllOptions,
   doc: Cash,
@@ -56,6 +57,7 @@ export function get2024StatBlock(
   return statBlock;
 }
 
+/** The source-book line, whitespace-normalized; the ", pg. N" tail kept only when requested. */
 function getSource(element: Cash, includePageNumber: boolean) {
   console.log("getSource element", element);
   const source = element.text().replace(/\s+/g, " ").replace(" ,", ",").trim();
@@ -81,22 +83,27 @@ function getDescription(doc: Cash, options: AllOptions) {
   return retVal.trim();
 }
 
+/** The monster's name from the stat-block name link. */
 function getName(element: Cash) {
   return element.find(".mon-stat-block-2024__name-link").text().trim();
 }
 
+/** The size/type/alignment meta line under the name ("Large Fiend (Devil), Lawful Evil"). */
 function getType(element: Cash) {
   return element.find(".mon-stat-block-2024__meta").text().trim();
 }
 
+/** The "AC" attribute as { Value, Notes }. */
 function getArmorClass(element: Cash) {
   return getAttribute(element, "AC");
 }
 
+/** The "HP" attribute as { Value, Notes } (Notes carries the dice formula). */
 function getHitPoints(element: Cash) {
   return getAttribute(element, "HP");
 }
 
+/** The 2024 Initiative line minus the Dex mod — the extra bonus DDB folded into the listed total. */
 function getInitiativeModifier(element: Cash) {
   const dexScore = getAbility(element, "dex");
   const dexModifier = Math.floor((dexScore - 10) / 2);
@@ -108,6 +115,7 @@ function getInitiativeModifier(element: Cash) {
   return parseInt(initiativeListed) - dexModifier;
 }
 
+/** A labelled attribute row as { Value: the leading number, Notes: the extra text beside it }. */
 function getAttribute(element: Cash, attributeName: string) {
   const label = element
     .find(".mon-stat-block-2024__attribute-label")
@@ -132,6 +140,7 @@ function getAttribute(element: Cash, attributeName: string) {
   };
 }
 
+/** All six ability scores from the 2024 stats table. */
 function getAbilities(element: Cash): AbilityScores {
   return {
     Str: getAbility(element, "str"),
@@ -143,6 +152,7 @@ function getAbilities(element: Cash): AbilityScores {
   };
 }
 
+/** One score from the stats table: the row's <th> names the ability, its first <td> holds the score. */
 function getAbility(element: Cash, ability: string) {
   let score = 10;
 
@@ -161,6 +171,7 @@ function getAbility(element: Cash, ability: string) {
   return score;
 }
 
+/** Proficient saves from the stats table: rows whose SAVE cell differs from the MOD cell. */
 function getSaves(element: Cash) {
   let saves: NameAndModifier[] = [];
 
@@ -189,6 +200,7 @@ function getSaves(element: Cash) {
   return saves;
 }
 
+/** Split the merged 2024 "Immunities" tidbit into Damage/Condition lists (";" or tooltip markup decides). */
 function getImmunities(element: Cash) {
   const immunitiesListLabel = element
     .find(".mon-stat-block-2024__tidbit-label")
@@ -232,6 +244,7 @@ function getImmunities(element: Cash) {
   }
 }
 
+/** Split a tidbit line into items on ";" when present, else ",". */
 function getDelimitedStrings(element: Cash, tidbitName: string) {
   const label = element
     .find(
@@ -261,6 +274,7 @@ function getDelimitedStrings(element: Cash, tidbitName: string) {
   return [];
 }
 
+/** Entries like "Dex +5" as { Name, Modifier }, parsing the modifier off the last word. */
 function getDelimitedModifiers(element: Cash, tidbitName: string) {
   const entries = getDelimitedStrings(element, tidbitName);
   return entries.map((e) => {
@@ -276,6 +290,7 @@ function getDelimitedModifiers(element: Cash, tidbitName: string) {
   });
 }
 
+/** The CR string ("1/2", "10") from the CR tidbit; "0" when absent. */
 function getChallenge(element: Cash) {
   const challengeText = getDelimitedStrings(element, "CR");
   if (challengeText.length == 0) {
@@ -285,6 +300,7 @@ function getChallenge(element: Cash) {
   return matches?.[0] || "0";
 }
 
+/** The XP number that rides on the CR line ("XP 1,100" / "1,100 XP"). */
 function getXp(element: Cash): number | undefined {
   // XP rides on the CR line. 2024 writes it "XP 1,100" ("CR 4 (XP 1,100; PB +2)"),
   // 2014 "1,100 XP" — handle both orders. Read the whole block so the comma in
@@ -294,6 +310,7 @@ function getXp(element: Cash): number | undefined {
   return raw ? parseInt(raw.replace(/,/g, ""), 10) : undefined;
 }
 
+/** A section's powers as Name/Content pairs; each <p>'s leading <strong> is the power name. */
 function getPowers(element: Cash, type: string): NameAndContent[] {
   const section = getPowerSection(element, type);
 
@@ -312,6 +329,7 @@ function getPowers(element: Cash, type: string): NameAndContent[] {
   return collapsePowerDescriptions(powerEntries);
 }
 
+/** Merge nameless follow-on paragraphs into the preceding named power's Content. */
 function collapsePowerDescriptions(powerEntries: NameAndContent[]) {
   return powerEntries.reduce<NameAndContent[]>((p, c, i) => {
     const isFirstParagraph = i == 0 || c.Name.length > 0;
@@ -334,6 +352,7 @@ function collapsePowerDescriptions(powerEntries: NameAndContent[]) {
   }, []);
 }
 
+/** The content divs for a section by heading; Traits also matches the heading-less lead block. */
 function getPowerSection(element: Cash, type: string) {
   if (type == "Traits") {
     return element

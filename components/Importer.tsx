@@ -4,6 +4,7 @@ import { Container } from "./Container";
 import { Brand } from "./Brand";
 import { OptionsButton } from "./OptionsButton";
 
+/** The import view: creature name, scrollable Creature JSON, and Copy/Download buttons. */
 export function Importer(props: {
   creature: Creature;
   setShowOptions: (show: boolean) => void;
@@ -11,12 +12,14 @@ export function Importer(props: {
   const [copied, setCopied] = useState(false);
   const json = JSON.stringify(props.creature, null, 2);
 
+  /** Copy the JSON to the clipboard and flash the button label to "Copied!". */
   const copy = async () => {
     await navigator.clipboard.writeText(json);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
 
+  /** Save the JSON as "<slug>.json" (the id minus its namespace) via a temporary anchor. */
   const download = () => {
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);

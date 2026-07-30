@@ -1,16 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { registerHooks } from "node:module";
 import { Window } from "happy-dom";
-
-// The module value-imports the `Cash` type, which only cash-dom's ESM build
-// exports at runtime, so point the bare specifier there.
-registerHooks({
-  resolve(specifier, context, next) {
-    if (specifier === "cash-dom") return next("cash-dom/dist/cash.esm.js", context);
-    return next(specifier, context);
-  },
-});
 
 // cash-dom captures document/window at module load, so the happy-dom globals
 // must exist before the imports below evaluate it.

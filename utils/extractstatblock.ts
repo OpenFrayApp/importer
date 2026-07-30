@@ -1,9 +1,10 @@
-import cash, { Cash } from "cash-dom";
-import { descriptionToMarkdown } from "./descriptionToMarkdown";
-import { StatBlock, AbilityScores, NameAndContent } from "./statblock";
-import { AllOptions, Options } from "./options";
-import { get2024StatBlock } from "./get2024statblock";
+import cash, { type Cash } from "cash-dom";
+import { descriptionToMarkdown } from "./descriptionToMarkdown.ts";
+import type { StatBlock, AbilityScores, NameAndContent } from "./statblock.ts";
+import { Options, type AllOptions } from "./options.ts";
+import { get2024StatBlock } from "./get2024statblock.ts";
 
+/** Scrape the open DDB monster page into a StatBlock (null if none); 2024 layouts delegate to get2024StatBlock. */
 export const extractStatBlock = (options: AllOptions) => {
   const doc = cash(document);
 
@@ -69,6 +70,7 @@ export const extractStatBlock = (options: AllOptions) => {
   return null;
 };
 
+/** The source-book line, whitespace-normalized; the ", pg. N" tail kept only when requested. */
 function getSource(element: Cash, includePageNumber: boolean) {
   const source = element.text().replace(/\s+/g, " ").replace(" ,", ",").trim();
   if (includePageNumber) {
@@ -93,22 +95,27 @@ function getDescription(doc: Cash, options: AllOptions) {
   return retVal.trim();
 }
 
+/** The monster's name from the stat-block header link. */
 function getName(element: Cash) {
   return element.find(".mon-stat-block__name a").text().trim();
 }
 
+/** The size/type/alignment meta line under the name ("Large fiend (devil), lawful evil"). */
 function getType(element: Cash) {
   return element.find(".mon-stat-block__meta").text().trim();
 }
 
+/** The "Armor Class" attribute as { Value, Notes }. */
 function getArmorClass(element: Cash) {
   return getAttribute(element, "Armor Class");
 }
 
+/** The "Hit Points" attribute as { Value, Notes } (Notes carries the dice formula). */
 function getHitPoints(element: Cash) {
   return getAttribute(element, "Hit Points");
 }
 
+/** A labelled attribute row as { Value: the leading number, Notes: the extra text beside it }. */
 function getAttribute(element: Cash, attributeName: string) {
   const label = element
     .find(".mon-stat-block__attribute-label")
@@ -129,6 +136,7 @@ function getAttribute(element: Cash, attributeName: string) {
   };
 }
 
+/** All six ability scores from the ability block. */
 function getAbilities(element: Cash): AbilityScores {
   return {
     Str: getAbility(element, "str"),
@@ -140,6 +148,7 @@ function getAbilities(element: Cash): AbilityScores {
   };
 }
 
+/** One score from the ".ability-block__stat--<ability>" score cell. */
 function getAbility(element: Cash, ability: string) {
   let score = 10;
   const scoreText = element
@@ -151,6 +160,7 @@ function getAbility(element: Cash, ability: string) {
   return score;
 }
 
+/** Split a tidbit line on ";" (else ","); "Bludgeoning, Piercing, and Slashing" survives as one item. */
 function getDelimitedStrings(element: Cash, tidbitName: string) {
   const label = element
     .find(".mon-stat-block__attribute-label, .mon-stat-block__tidbit-label")
@@ -188,6 +198,7 @@ function getDelimitedStrings(element: Cash, tidbitName: string) {
   return [];
 }
 
+/** Entries like "Dex +5" as { Name, Modifier }, parsing the modifier off the last word. */
 function getDelimitedModifiers(element: Cash, tidbitName: string) {
   const entries = getDelimitedStrings(element, tidbitName);
   return entries.map((e) => {
@@ -203,6 +214,7 @@ function getDelimitedModifiers(element: Cash, tidbitName: string) {
   });
 }
 
+/** The CR string ("1/2", "10") from the Challenge line; "0" when absent. */
 function getChallenge(element: Cash) {
   const challengeText = getDelimitedStrings(element, "Challenge");
   if (challengeText.length == 0) {
@@ -212,6 +224,7 @@ function getChallenge(element: Cash) {
   return matches?.[0] || "0";
 }
 
+/** The XP number that rides on the Challenge line ("1,100 XP" / "XP 1,100"). */
 function getXp(element: Cash): number | undefined {
   // XP rides on the Challenge line. 2014 writes it "1,100 XP" ("Challenge 4
   // (1,100 XP)"), 2024 "XP 1,100" — handle both orders. Read the whole block so the
@@ -221,6 +234,7 @@ function getXp(element: Cash): number | undefined {
   return raw ? parseInt(raw.replace(/,/g, ""), 10) : undefined;
 }
 
+/** A section's powers as Name/Content pairs; each <p>'s leading <strong> is the power name. */
 function getPowers(element: Cash, type: string): NameAndContent[] {
   const section = getPowerSection(element, type);
 
@@ -239,6 +253,7 @@ function getPowers(element: Cash, type: string): NameAndContent[] {
   return collapsePowerDescriptions(powerEntries);
 }
 
+/** Merge nameless follow-on paragraphs into the preceding named power's Content. */
 function collapsePowerDescriptions(powerEntries: NameAndContent[]) {
   return powerEntries.reduce<NameAndContent[]>((p, c, i) => {
     const isFirstParagraph = i == 0 || c.Name.length > 0;

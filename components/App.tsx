@@ -6,6 +6,7 @@ import { HelpText } from "./help_text";
 import { Importer } from "./Importer";
 import { OptionsEditor } from "./optionseditor";
 
+/** Popup root: requests the active tab's scraped stat block, then shows Options, Help, or Importer. */
 function App() {
   const [creature, setCreature] = useState<Creature>();
   const [showOptions, setShowOptions] = useState(false);

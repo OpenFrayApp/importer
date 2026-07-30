@@ -1,4 +1,4 @@
-import cash, { Cash } from "cash-dom";
+import cash, { type Cash } from "cash-dom";
 
 /**
  * Convert a DDB description block's child elements to markdown so OpenFray renders

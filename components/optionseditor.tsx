@@ -3,6 +3,7 @@ import { ChangeEvent } from "react";
 import { storage } from "wxt/storage";
 import { Brand } from "./Brand";
 
+/** The options view: one checkbox per import option, plus a Done button to return. */
 export function OptionsEditor(props: {
   setShowOptions: (show: boolean) => void;
 }) {
@@ -35,6 +36,7 @@ export function OptionsEditor(props: {
   );
 }
 
+/** A labelled option toggle: hydrates from extension storage and writes "on"/"off" on change. */
 const Checkbox = (props: {
   optionName: Options;
   label: string;

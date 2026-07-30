@@ -2,6 +2,7 @@ import { Container } from "./Container";
 import { Brand } from "./Brand";
 import { OptionsButton } from "./OptionsButton";
 
+/** Fallback view when no stat block scrapes: points the user at a DDB monster Details page. */
 export function HelpText(props: {
   setShowOptions: (show: boolean) => void;
 }) {
@@ -18,6 +19,7 @@ export function HelpText(props: {
   );
 }
 
+/** An anchor that opens its URL in the active tab (a plain href would target the popup). */
 function Link(props: { url: string; children: any }) {
   return (
     <a

@@ -6,6 +6,7 @@ import { storage } from "wxt/storage";
 export default defineContentScript({
   matches: ["*://*.dndbeyond.com/*"],
   main() {
+    /** Reply to a scrape request with the page's stat block, or null; true holds sendResponse open. */
     function onRequest(
       request: any,
       _sender: any,
