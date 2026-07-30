@@ -12,6 +12,7 @@ export const OptionDefaults: AllOptions = {
   [Options.IncludeLink]: "on",
 };
 
+/** Fill the option set from stored extension values, keeping the defaults for unset keys. */
 export function initializeOptionsFromStoredValues(
   values: {
     key:
@@ -22,7 +23,9 @@ export function initializeOptionsFromStoredValues(
     value: any;
   }[]
 ) {
-  const options = OptionDefaults;
+  // A copy — writing into OptionDefaults itself would let a stored "off" pollute
+  // the defaults for every later caller.
+  const options = { ...OptionDefaults };
   if (values) {
     for (const key in options) {
       const storedOption = values.find((v) => v.key === key);

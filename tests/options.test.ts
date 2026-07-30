@@ -30,25 +30,24 @@ test("stored keys that are not options are ignored", () => {
 });
 
 test("stored values override their option and leave the rest", () => {
-  // The function writes into the shared OptionDefaults object, so restore it
-  // afterwards for any test that runs later.
-  try {
-    const options = initializeOptionsFromStoredValues([
-      stored(Options.IncludeLink, "off"),
-    ]);
-    assert.equal(options[Options.IncludeLink], "off");
-    assert.equal(options[Options.IncludeDescription], "on");
-    assert.equal(options[Options.IncludePageNumberWithSource], "on");
+  const options = initializeOptionsFromStoredValues([
+    stored(Options.IncludeLink, "off"),
+  ]);
+  assert.equal(options[Options.IncludeLink], "off");
+  assert.equal(options[Options.IncludeDescription], "on");
+  assert.equal(options[Options.IncludePageNumberWithSource], "on");
 
-    const allOff = initializeOptionsFromStoredValues([
-      stored(Options.IncludePageNumberWithSource, "off"),
-      stored(Options.IncludeDescription, "off"),
-      stored(Options.IncludeLink, "off"),
-    ]);
-    assert.equal(allOff[Options.IncludePageNumberWithSource], "off");
-    assert.equal(allOff[Options.IncludeDescription], "off");
-    assert.equal(allOff[Options.IncludeLink], "off");
-  } finally {
-    for (const option of Object.values(Options)) OptionDefaults[option] = "on";
-  }
+  const allOff = initializeOptionsFromStoredValues([
+    stored(Options.IncludePageNumberWithSource, "off"),
+    stored(Options.IncludeDescription, "off"),
+    stored(Options.IncludeLink, "off"),
+  ]);
+  assert.equal(allOff[Options.IncludePageNumberWithSource], "off");
+  assert.equal(allOff[Options.IncludeDescription], "off");
+  assert.equal(allOff[Options.IncludeLink], "off");
+});
+
+test("reading stored values never mutates the shared defaults", () => {
+  initializeOptionsFromStoredValues([stored(Options.IncludeLink, "off")]);
+  assert.equal(OptionDefaults[Options.IncludeLink], "on");
 });
