@@ -6,7 +6,7 @@ changing things.
 ## The working rules live with the app
 
 This repo follows the main repo's
-[AGENTS.md](https://github.com/OpenFrayApp/openfray.app/blob/main/AGENTS.md) working
+[AGENTS.md](https://github.com/OpenFrayApp/openfray/blob/main/AGENTS.md) working
 rules, with the license swapped out (this extension is **MIT**, not AGPL — no
 license headers in source files, matching the existing files). In brief:
 
