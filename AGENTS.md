@@ -1,48 +1,37 @@
 Guidance for AI agents (and humans) working on the OpenFray Importer. The
-[README](./README.md) covers what the extension does, building both browser
-targets, and store packaging — read it first. This file adds the rules for
-changing things.
+cross-repo agreements (code style, writing style, committing) live in the
+[openfray repo's AGENTS.md](https://github.com/OpenFrayApp/openfray/blob/main/AGENTS.md).
+**Read it before working here.** The [README](./README.md) documents the build,
+store packaging, and reviewer instructions; this file carries the rules.
 
-## The working rules live with the app
+## What this repo is
 
-This repo follows the main repo's
-[AGENTS.md](https://github.com/OpenFrayApp/openfray/blob/main/AGENTS.md) working
-rules, with the license swapped out (this extension is **MIT**, not AGPL — no
-license headers in source files, matching the existing files). In brief:
+A [WXT](https://wxt.dev) browser extension (React + TypeScript) that reads a D&D
+Beyond **monster** page and outputs OpenFray `Creature` JSON. The scraping is
+`utils/extractstatblock.ts` (2014 layout) and `utils/get2024statblock.ts` (2024);
+`utils/statBlockToCreature.ts` maps a scraped block into OpenFray's schema.
 
-- **Code style:** self-explaining code; every named function and component opens
-  with a one-line header comment saying what it does; no other comments unless the
-  code can't say it (a why, a DDB-markup quirk, a workaround); one definition per
-  concept.
-- **Tests:** everything testable ships with tests, in `tests/` (`node --test`,
-  run with `npm test`). Parsing is the heart of this extension — a parser change
-  without a fixture-driven test is not done.
-- **Committing:** one concern per commit, `Area: what changed` subjects (areas in
-  use: `Popup`, `Options`, `Firefox`, `Chrome`, `Parse`, `Docs`, `Tests`,
-  `Release`), DCO sign-off via `git commit -s`, authorship is human — never add AI
-  co-author trailers — and don't push without the maintainer's go-ahead.
-- **Copy:** user-facing text follows the app's `STYLE.md` (sentence case,
-  **Game Master** never DM, "sign in" never "log in").
+```bash
+npm run dev            # Chrome, live reload
+npm test               # converter unit tests (node --test)
+npm run compile        # tsc --noEmit
+npm run build && npm run zip   # store packages; never Finder-compress the folder
+```
 
-## Rules specific to this extension
+## The rules
 
-1. **`utils/openfray/schema.ts` is a vendored copy** of the app's
-   `Creature`/`Spell` types. The source of truth is the app repo — change it there
-   first, then mirror it here. Never let the two drift; "Sync schema with the app"
-   is its own commit.
-2. **The user extracts their own page.** The extension reads the D&D Beyond
-   monster page the user has open and converts it locally; it never fetches DDB
-   itself, never scrapes in bulk, and never ships DDB content. Keep it that way —
-   it is the legal posture as much as the design.
-3. **Mechanics from prose only where unambiguous.** Attack/save lines that parse
-   cleanly become structured fields; anything else stays a `utility` action with
-   its prose intact. When in doubt, keep the prose — a wrong number is worse than
-   a missing one (the GM can read; the roller can't unparse).
-4. **Both targets stay green.** A change is done when `npm run build` (Chrome
-   MV3) and `npm run build:firefox` (MV2) both succeed; `npm run compile` is the
-   typecheck gate. Store metadata (the AMO id, data-collection declarations)
-   lives in `wxt.config.ts` — treat it like the legal pages in the app repo:
-   deliberate edits only.
-5. **DDB markup changes are the maintenance burden.** When a parse breaks, fix it
-   against a fixture captured from the real page (trimmed to the relevant
-   markup), and keep the fixture in `tests/` so the regression stays caught.
+- **Monsters only, never characters.** Importing a character sheet would hand the
+  console a player's build, which its scope principle forbids. The extension stays
+  on the monster Details page.
+- **No game content ships in this repo.** No monster, spell, or stat data is
+  bundled or downloaded; the extension only reformats the page the user is already
+  viewing, on their machine.
+- **The output must match the console's schema.** Custom ids use the `custom:`
+  prefix; the scraped book and page become `source`. When the console's `Creature`
+  type moves, this repo follows in the same release.
+- **License is MIT**, and the LICENSE keeps Evan Bailey's copyright line: the
+  scraping started from his MIT code, and the notice travels with it.
+- **Store zips come from `npm run zip` / `npm run zip:firefox` only.** macOS
+  Finder writes `__MACOSX/._*` siblings into archives and AMO flags every one.
+
+Commit subjects use the `App:` and `Tests:` areas.
