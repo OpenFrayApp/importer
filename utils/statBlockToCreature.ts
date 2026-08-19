@@ -586,10 +586,11 @@ export function statBlockToCreature(sb: StatBlock, opts: ConvertOptions = {}): C
     cha: sb.Abilities.Cha,
   };
 
-  // DDB 2024 pages list an Initiative; the 2024 scraper records it (minus the Dex
-  // mod) in InitiativeModifier and 2014 pages don't have one — so its presence is
-  // the edition tell, and the full listed initiative is the recorded value + Dex mod.
-  const is2024 = sb.InitiativeModifier != null;
+  // The scraper records which DDB layout it read, and that is the edition tell.
+  // Blocks built without a Layout (older callers, test fixtures) fall back to the
+  // 2024-only Initiative line, whose recorded value is the listed total minus Dex.
+  const is2024 =
+    sb.Layout === "2024" || (sb.Layout == null && sb.InitiativeModifier != null);
   const edition: Edition = opts.edition ?? (is2024 ? "5.5" : "5.0");
 
   const creature: Creature = {
@@ -615,7 +616,8 @@ export function statBlockToCreature(sb: StatBlock, opts: ConvertOptions = {}): C
   if (sb.Description?.trim()) creature.description = sb.Description.trim();
   const hpFormula = parseHpFormula(sb.HP.Notes);
   if (hpFormula) creature.hpFormula = hpFormula;
-  if (sb.InitiativeModifier != null) {
+  // Finite, not just non-null: a NaN would reach the emitted JSON as null.
+  if (sb.InitiativeModifier != null && Number.isFinite(sb.InitiativeModifier)) {
     creature.initiative = sb.InitiativeModifier + abilityMod(abilities.dex);
   }
 

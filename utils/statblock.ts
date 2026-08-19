@@ -24,6 +24,8 @@ export interface NameAndContent {
 }
 
 export interface StatBlock {
+  /** Which DDB page layout this was scraped from; the edition tell. */
+  Layout?: "2014" | "2024";
   Name: string;
   Source: string;
   Type: string;
@@ -57,3 +59,17 @@ export interface StatBlock {
 
 /** The standard 5e modifier for an ability score: floor((score - 10) / 2). */
 export const abilityMod = (score: number): number => Math.floor((score - 10) / 2);
+
+// DDB writes negative numbers with U+2212 MINUS SIGN (and the occasional
+// non-breaking hyphen), which parseInt/Number and our [+-] regexes reject: a
+// scraped "−1" parses to NaN, and a "(1d4 − 1)" damage roll matches nothing.
+const UNICODE_MINUS = /[−‑]/g;
+
+/** Fold DDB's Unicode minus signs to ASCII "-", leaving prose em/en dashes alone. */
+export const normalizeMinus = (s: string): string => s.replace(UNICODE_MINUS, "-");
+
+/** parseInt over DDB text, tolerating its Unicode minus; undefined when there's no number. */
+export const parseSignedInt = (s: string): number | undefined => {
+  const n = parseInt(normalizeMinus(s), 10);
+  return Number.isNaN(n) ? undefined : n;
+};

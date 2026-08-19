@@ -3,6 +3,8 @@ import { descriptionToMarkdown } from "./descriptionToMarkdown.ts";
 import { Options, type AllOptions } from "./options.ts";
 import {
   abilityMod,
+  normalizeMinus,
+  parseSignedInt,
   type AbilityScores,
   type NameAndContent,
   type NameAndModifier,
@@ -18,6 +20,7 @@ export function get2024StatBlock(
   console.log("Found 2024 Statblock");
   const statBlockElement = statBlockElements.first();
   const statBlock: StatBlock = {
+    Layout: "2024",
     Source: getSource(
       doc.find(".monster-source"),
       options[Options.IncludePageNumberWithSource] == "on"
@@ -105,15 +108,18 @@ function getHitPoints(element: Cash) {
 }
 
 /** The 2024 Initiative line minus the Dex mod — the extra bonus DDB folded into the listed total. */
-function getInitiativeModifier(element: Cash) {
+function getInitiativeModifier(element: Cash): number | undefined {
   const dexScore = getAbility(element, "dex");
   const dexModifier = abilityMod(dexScore);
   const initiativeHeader = element
     .find(".mon-stat-block-2024__attribute-label")
     .filter((_, e: Element) => e.innerHTML.trim() == "Initiative")
     .first();
-  const initiativeListed = initiativeHeader.next().text().trim();
-  return parseInt(initiativeListed) - dexModifier;
+  const initiativeListed = parseSignedInt(initiativeHeader.next().text().trim());
+  // Never let NaN escape: it survives the extension's JSON message passing as null,
+  // and a null initiative used to read downstream as "this is a 2014 page".
+  if (initiativeListed == null) return undefined;
+  return initiativeListed - dexModifier;
 }
 
 /** A labelled attribute row as { Value: the leading number, Notes: the extra text beside it }. */
@@ -130,11 +136,9 @@ function getAttribute(element: Cash, attributeName: string) {
       .text()
       .trim()
   );
-  const notes = label
-    .parent()
-    .find(".mon-stat-block-2024__attribute-data-extra")
-    .text()
-    .trim();
+  const notes = normalizeMinus(
+    label.parent().find(".mon-stat-block-2024__attribute-data-extra").text().trim()
+  );
   return {
     Value: value,
     Notes: notes,
@@ -193,7 +197,7 @@ function getSaves(element: Cash) {
     if (scoreSave !== scoreModifier) {
       saves.push({
         Name: cash(scoreHeader).text().trim(),
-        Modifier: parseInt(scoreSave),
+        Modifier: parseSignedInt(scoreSave) ?? 0,
       });
     }
   });
@@ -281,7 +285,7 @@ function getDelimitedModifiers(element: Cash, tidbitName: string) {
   return entries.map((e) => {
     // Extract the last piece of the name/modifier, and parse an int from only that, ensuring the name can contain any manner of spacing.
     const nameAndModifier = e.split(" ");
-    const modifierValue = parseInt(nameAndModifier.pop() ?? "0");
+    const modifierValue = parseSignedInt(nameAndModifier.pop() ?? "") ?? 0;
 
     // Join the remaining string name, and trim outside spacing just in case.
     return {
@@ -323,7 +327,7 @@ function getPowers(element: Cash, type: string): NameAndContent[] {
       const powerName = contentNode.find("strong").first().remove();
       return {
         Name: powerName.text().trim().replace(/\.$/, ""),
-        Content: contentNode.text().trim(),
+        Content: normalizeMinus(contentNode.text().trim()),
       };
     });
 

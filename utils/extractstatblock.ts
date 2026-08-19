@@ -1,6 +1,12 @@
 import cash, { type Cash } from "cash-dom";
 import { descriptionToMarkdown } from "./descriptionToMarkdown.ts";
-import type { StatBlock, AbilityScores, NameAndContent } from "./statblock.ts";
+import {
+  normalizeMinus,
+  parseSignedInt,
+  type AbilityScores,
+  type NameAndContent,
+  type StatBlock,
+} from "./statblock.ts";
 import { Options, type AllOptions } from "./options.ts";
 import { get2024StatBlock } from "./get2024statblock.ts";
 
@@ -18,6 +24,7 @@ export const extractStatBlock = (options: AllOptions) => {
   if (statBlockElements.length > 0) {
     const statBlockElement = statBlockElements.first();
     const statBlock: StatBlock = {
+      Layout: "2014",
       Source: getSource(
         doc.find(".monster-source"),
         options[Options.IncludePageNumberWithSource] == "on"
@@ -125,11 +132,9 @@ function getAttribute(element: Cash, attributeName: string) {
   const value = parseInt(
     label.parent().find(".mon-stat-block__attribute-data-value").text().trim()
   );
-  const notes = label
-    .parent()
-    .find(".mon-stat-block__attribute-data-extra")
-    .text()
-    .trim();
+  const notes = normalizeMinus(
+    label.parent().find(".mon-stat-block__attribute-data-extra").text().trim()
+  );
   return {
     Value: value,
     Notes: notes,
@@ -204,7 +209,7 @@ function getDelimitedModifiers(element: Cash, tidbitName: string) {
   return entries.map((e) => {
     // Extract the last piece of the name/modifier, and parse an int from only that, ensuring the name can contain any manner of spacing.
     const nameAndModifier = e.split(" ");
-    const modifierValue = parseInt(nameAndModifier.pop() ?? "0");
+    const modifierValue = parseSignedInt(nameAndModifier.pop() ?? "") ?? 0;
 
     // Join the remaining string name, and trim outside spacing just in case.
     return {
@@ -246,7 +251,7 @@ function getPowers(element: Cash, type: string): NameAndContent[] {
       const powerName = contentNode.find("strong").first().remove();
       return {
         Name: powerName.text().trim().replace(/\.$/, ""),
-        Content: contentNode.text().trim(),
+        Content: normalizeMinus(contentNode.text().trim()),
       };
     });
 

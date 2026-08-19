@@ -434,3 +434,49 @@ test("2014 ranged weapon attack: range normal/long, no reach", () => {
   assert.equal(shortbow?.reach, undefined);
   assert.deepEqual(shortbow?.range, { normal: 80, long: 320 });
 });
+
+test("the edition follows the scraped layout, not a lucky number parse", () => {
+  // The bug this guards: a 2024 page whose Initiative is negative ("−1 (9)") used to
+  // parse to NaN, which JSON message passing turns into null — and a null Initiative
+  // read as a 2014 page, so a Monster Manual 2024 creature imported as 5e.
+  const scraped = statBlock({ Name: "Beholder Zombie", Layout: "2024", InitiativeModifier: NaN });
+  const overTheWire = JSON.parse(JSON.stringify(scraped));
+  assert.equal(overTheWire.InitiativeModifier, null);
+
+  const c = statBlockToCreature(overTheWire);
+  assert.equal(c.edition, "5.5");
+  // NaN must not surface as a null initiative either; the field is simply absent.
+  assert.equal(c.initiative, undefined);
+  assert.ok(!("initiative" in c));
+
+  // A recorded layout decides on its own, with no Initiative in play at all.
+  assert.equal(statBlockToCreature(statBlock({ Layout: "2024" })).edition, "5.5");
+  assert.equal(statBlockToCreature(statBlock({ Layout: "2014" })).edition, "5.0");
+  // An explicit override still wins over the recorded layout.
+  assert.equal(statBlockToCreature(statBlock({ Layout: "2024" }), { edition: "5.0" }).edition, "5.0");
+});
+
+test("negative dice formulas written with U+2212 survive instead of being dropped", () => {
+  const c = statBlockToCreature(
+    statBlock({
+      Layout: "2024",
+      Abilities: { Str: 10, Dex: 8, Con: 10, Int: 10, Wis: 10, Cha: 10 },
+      InitiativeModifier: 0,
+      HP: { Value: 3, Notes: "(1d6 - 1)" },
+      Actions: [
+        {
+          Name: "Bite",
+          Content: "Melee Attack Roll: -1, reach 5 ft. Hit: 2 (1d4 - 1) Piercing damage.",
+        },
+      ],
+    }),
+  );
+
+  // The scrapers hand these over already folded to ASCII; the regexes only ever
+  // matched [+-], so before the fix the formula and the whole attack vanished.
+  assert.equal(c.hpFormula, "1d6-1");
+  assert.equal(c.initiative, -1);
+  assert.equal(c.actions?.[0].toHit, -1);
+  assert.equal(c.actions?.[0].kind, "melee");
+  assert.deepEqual(c.actions?.[0].damage, [{ formula: "1d4-1", type: "piercing" }]);
+});

@@ -117,7 +117,7 @@ The converter is `utils/statBlockToCreature.ts`; the scraping lives in
   for both editions: 2024 spellcasting actions, and 2014 spellcasting **traits** —
   innate (at-will / N-per-day) and prepared-slot casters alike.
 - **Mythic actions** aren't mapped (OpenFray's schema has no equivalent).
-- **Edition** is inferred from the page layout (2024 → 5.5, otherwise 5.0).
+- **Edition** follows the page layout the scraper read (2024 → 5.5, otherwise 5.0).
 - The flavor description keeps headings, lists, and paragraphs; inline emphasis
   (bold/italic) is not preserved.
 

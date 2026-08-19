@@ -226,7 +226,22 @@ test("dispatch: a 2024 layout goes to the 2024 parser, and no stat block returns
   const block2024 = extractStatBlock(opts());
   assert.equal(block2024?.Name, "Adult Red Dragon");
   assert.equal(block2024?.InitiativeModifier, 10);
+  assert.equal(block2024?.Layout, "2024");
 
   document.body.innerHTML = "<p>No monster here.</p>";
   assert.equal(extractStatBlock(opts()), null);
+});
+
+test("a 2014 page records the 2014 layout, and its negative modifiers survive U+2212", () => {
+  const block = parse(
+    `${tidbit("Saving Throws", "Dex −1, Con +5")}
+     ${tidbit("Skills", "Stealth −1")}`,
+  );
+
+  assert.equal(block?.Layout, "2014");
+  assert.deepEqual(block?.Saves, [
+    { Name: "Dex", Modifier: -1 },
+    { Name: "Con", Modifier: 5 },
+  ]);
+  assert.deepEqual(block?.Skills, [{ Name: "Stealth", Modifier: -1 }]);
 });

@@ -112,6 +112,33 @@ test("initiative modifier: the listed bonus minus the Dex modifier", () => {
   assert.equal(withDex10.InitiativeModifier, 10);
 });
 
+test("Unicode minus: DDB writes negative numbers as U+2212, which parseInt rejects", () => {
+  // The Beholder Zombie's real markup: Initiative "−1 (9)" against Dex 8, plus
+  // proficient saves and a skill that stay negative.
+  const block = parse(
+    `${attribute("Initiative", "−1 (9)")}
+     ${statsTable([
+       ["Dex", 8, "−1", "−1"],
+       ["Wis", 6, "−2", "+1"],
+       ["Cha", 3, "−4", "−1"],
+     ])}
+     ${tidbit("Skills", "Stealth −1")}`,
+  );
+
+  // Listed −1 against a −1 Dex modifier means no extra bonus. This used to be NaN,
+  // which reached statBlockToCreature as null and mislabelled the creature 5e.
+  assert.equal(block.InitiativeModifier, 0);
+  assert.deepEqual(block.Saves, [
+    { Name: "Wis", Modifier: 1 },
+    { Name: "Cha", Modifier: -1 },
+  ]);
+  assert.deepEqual(block.Skills, [{ Name: "Stealth", Modifier: -1 }]);
+});
+
+test("the scraped block records which layout it came from", () => {
+  assert.equal(parse(DRAGON_STATS).Layout, "2024");
+});
+
 test("ability table: all six scores, saves only where the save differs from the modifier", () => {
   const block = parse(DRAGON_STATS);
 
@@ -300,5 +327,7 @@ test("an empty stat block degrades to empty lists, CR 0, and NaN numerics", () =
   // away from NaN here should be a deliberate one.
   assert.ok(Number.isNaN(block.Abilities.Str));
   assert.ok(Number.isNaN(block.AC.Value));
-  assert.ok(Number.isNaN(block.InitiativeModifier));
+  // InitiativeModifier is the exception, deliberately: NaN survives the extension's
+  // JSON message passing as null, which statBlockToCreature read as a 2014 page.
+  assert.equal(block.InitiativeModifier, undefined);
 });
