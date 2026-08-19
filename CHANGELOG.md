@@ -2,6 +2,18 @@
 
 All notable changes to OpenFray Importer are documented here.
 
+## [1.0.1]
+
+- 2024 monsters with a negative Initiative imported as 5e instead of 5.5. D&D Beyond
+  writes negative numbers with a Unicode minus sign that the parser could not read.
+  The Beholder Zombie is one, along with every creature of Dexterity 9 or lower.
+- Negative saving throws, skill modifiers, and attack bonuses now import. So do damage
+  rolls and hit-point formulas that carry a negative modifier, such as `(1d4 − 1)`,
+  which were dropped from the creature.
+- Eye rays import as separate rollable actions, each with its own saving throw and
+  damage. The Beholder's ten arrived as a single action holding every ray's damage.
+  The Beholder Zombie's four did not arrive.
+
 ## [1.0.0]
 
 - First stable release.

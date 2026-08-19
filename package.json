@@ -2,7 +2,7 @@
   "name": "openfray-ddb-import",
   "description": "A browser extension that scrapes a D&D Beyond monster page and outputs OpenFray Creature JSON.",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "wxt",
