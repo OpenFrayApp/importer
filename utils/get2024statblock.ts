@@ -1,6 +1,7 @@
 import cash, { type Cash } from "cash-dom";
 import { descriptionToMarkdown } from "./descriptionToMarkdown.ts";
 import { Options, type AllOptions } from "./options.ts";
+import { powerNodes, powerText } from "./powernodes.ts";
 import {
   abilityMod,
   normalizeMinus,
@@ -315,21 +316,18 @@ function getXp(element: Cash): number | undefined {
   return raw ? parseInt(raw.replace(/,/g, ""), 10) : undefined;
 }
 
-/** A section's powers as Name/Content pairs; each <p>'s leading <strong> is the power name. */
+/** A section's powers as Name/Content pairs; each entry's leading <strong> is its name. */
 function getPowers(element: Cash, type: string): NameAndContent[] {
   const section = getPowerSection(element, type);
 
-  const powerEntries = section
-    .children("p")
-    .get()
-    .map((el) => {
-      const contentNode = cash(el).clone();
-      const powerName = contentNode.find("strong").first().remove();
-      return {
-        Name: powerName.text().trim().replace(/\.$/, ""),
-        Content: normalizeMinus(contentNode.text().trim()),
-      };
-    });
+  const powerEntries = powerNodes(section.get()).map((el) => {
+    const contentNode = cash(el).clone();
+    const powerName = contentNode.find("strong").first().remove();
+    return {
+      Name: powerName.text().trim().replace(/\.$/, ""),
+      Content: normalizeMinus(powerText(contentNode.get(0) as Element)),
+    };
+  });
 
   return collapsePowerDescriptions(powerEntries);
 }

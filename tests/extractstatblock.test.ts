@@ -232,6 +232,54 @@ test("dispatch: a 2024 layout goes to the 2024 parser, and no stat block returns
   assert.equal(extractStatBlock(opts()), null);
 });
 
+test("a list item spilling into a second paragraph keeps the blank line between them", () => {
+  const block = parse(
+    section(
+      "Actions",
+      "<p><em><strong>Eye Rays.</strong></em> The beholder shoots one of the following:</p>" +
+        "<ol><li><p><em>Telekinetic Ray.</em> The beholder moves the target up to 30 feet.</p>" +
+        "<p>It can also exert fine control on objects with this ray.</p></li></ol>",
+    ),
+  );
+
+  // 2014 names its rays with <em>, not <strong>, so they stay folded into Eye Rays —
+  // but flattening the item must not run its two paragraphs together.
+  assert.deepEqual(block?.Actions.map((a) => a.Name), ["Eye Rays"]);
+  assert.match(block!.Actions[0].Content, /30 feet\.\n\nIt can also exert fine control/);
+});
+
+test("2014 powers nested under a wrapper inside the content block are still found", () => {
+  const block = parse(
+    section(
+      "Actions",
+      "<div class=\"wrapper\"><p><strong>Bite.</strong> <em>Melee Weapon Attack:</em> +10 to hit, reach 10 ft., one target. <em>Hit:</em> 17 (2d10 + 6) piercing damage.</p>" +
+        "<p><strong>Claw.</strong> <em>Melee Weapon Attack:</em> +10 to hit, reach 5 ft., one target. <em>Hit:</em> 13 (2d6 + 6) slashing damage.</p></div>",
+    ),
+  );
+
+  // Powers are read at whatever depth DDB nested them, not just as direct children.
+  assert.deepEqual(block?.Actions.map((a) => a.Name), ["Bite", "Claw"]);
+});
+
+test("2014 sections split the same packed shapes: <br>-separated entries and list items", () => {
+  const block = parse(
+    section(
+      "Actions",
+      "<p><strong>Eye Ray.</strong> The beholder shoots one of the following rays:</p>" +
+        "<p><strong>Charm Ray.</strong> DC 16 Wisdom saving throw." +
+        "<br><strong>Fear Ray.</strong> DC 16 Wisdom saving throw.</p>" +
+        "<ul><li><strong>Sleep Ray.</strong> DC 16 Wisdom saving throw.</li></ul>",
+    ),
+  );
+
+  assert.deepEqual(block?.Actions.map((a) => a.Name), [
+    "Eye Ray",
+    "Charm Ray",
+    "Fear Ray",
+    "Sleep Ray",
+  ]);
+});
+
 test("a 2014 page records the 2014 layout, and its negative modifiers survive U+2212", () => {
   const block = parse(
     `${tidbit("Saving Throws", "Dex −1, Con +5")}

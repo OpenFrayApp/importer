@@ -237,6 +237,72 @@ test("powers: traits vs actions split, recharge kept in the name, follow-on para
   assert.deepEqual(block.MythicActions, []);
 });
 
+test("eye rays: DDB packs the beholder's rays into one <p>, separated by <br>", () => {
+  const block = parse(
+    section("Actions", [
+      "<p><em><strong>Eye Rays.</strong></em> The beholder randomly shoots one of the following magical rays (roll 1d10):</p>",
+      "<p><strong>1: Charm Ray.</strong> <em>Wisdom Saving Throw:</em> DC 16. <em>Failure:</em> 13 (3d8) Psychic damage." +
+        "<br> <strong>2: Paralyzing Ray.</strong> <em>Constitution Saving Throw:</em> DC 16. <em>Failure:</em> The target has the Paralyzed condition." +
+        "<br> <strong>3: Fear Ray.</strong> <em>Wisdom Saving Throw:</em> DC 16. <em>Failure:</em> 14 (4d6) Psychic damage.</p>",
+    ]),
+  );
+
+  assert.deepEqual(block.Actions.map((a) => a.Name), [
+    "Eye Rays",
+    "1: Charm Ray",
+    "2: Paralyzing Ray",
+    "3: Fear Ray",
+  ]);
+  // Each ray keeps only its own prose, so the converter reads one save and one set
+  // of damage per ray instead of merging every ray into the first one.
+  assert.equal(block.Actions[1].Content, "Wisdom Saving Throw: DC 16. Failure: 13 (3d8) Psychic damage.");
+  assert.equal(block.Actions[3].Content, "Wisdom Saving Throw: DC 16. Failure: 14 (4d6) Psychic damage.");
+});
+
+test("eye rays: the beholder zombie writes the same table as an <ol>, whose items are powers too", () => {
+  const block = parse(
+    section("Actions", [
+      "<p><em><strong>Eye Rays.</strong></em> The zombie randomly shoots one of the following magical rays (roll 1d4):</p>",
+      "<ol><li><strong>Paralyzing Ray.</strong> <em>Constitution Saving Throw:</em> DC 14. <em>Failure:</em> The target has the Paralyzed condition.</li>" +
+        "<li><strong>Fear Ray.</strong> <em>Wisdom Saving Throw:</em> DC 14. <em>Failure:</em> 13 (3d8) Psychic damage.</li></ol>",
+    ]),
+  );
+
+  // Before, children("p") skipped the list outright and all four rays were lost.
+  assert.deepEqual(block.Actions.map((a) => a.Name), ["Eye Rays", "Paralyzing Ray", "Fear Ray"]);
+  assert.equal(block.Actions[2].Content, "Wisdom Saving Throw: DC 14. Failure: 13 (3d8) Psychic damage.");
+});
+
+test("a bulleted list inside a power's prose folds into it rather than making powers", () => {
+  const block = parse(
+    section("Traits", [
+      "<p><em><strong>Shapechanger.</strong></em> The beast can polymorph. While shapechanged:</p>",
+      "<ul><li>Its statistics are unchanged.</li><li>It cannot speak.</li></ul>",
+      "<p><em><strong>Keen Smell.</strong></em> It has Advantage on Perception checks that rely on smell.</p>",
+    ]),
+  );
+
+  // The unnamed items collapse into the power above them, the way a follow-on
+  // paragraph does — before, the list was dropped on the floor entirely.
+  assert.deepEqual(block.Traits.map((t) => t.Name), ["Shapechanger", "Keen Smell"]);
+  assert.equal(
+    block.Traits[0].Content,
+    "The beast can polymorph. While shapechanged:\n\nIts statistics are unchanged.\n\nIt cannot speak.",
+  );
+});
+
+test("a <br> inside one power is a line break, not a power boundary", () => {
+  const block = parse(
+    section("Actions", [
+      "<p><strong>Antimagic Cone.</strong> The beholder's central eye emits an antimagic wave in a 150-foot Cone." +
+        "<br>That area works against the beholder's own Eye Rays.</p>",
+    ]),
+  );
+
+  assert.deepEqual(block.Actions.map((a) => a.Name), ["Antimagic Cone"]);
+  assert.match(block.Actions[0].Content, /own Eye Rays\.$/);
+});
+
 test("a heading-less description block is filed under traits", () => {
   const block = parse(
     section("", ["<p><strong>Pack Tactics.</strong> The wolf has Advantage on attack rolls near an ally.</p>"]) +
