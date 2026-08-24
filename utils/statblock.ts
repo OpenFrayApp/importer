@@ -44,6 +44,8 @@ export interface StatBlock {
   Skills: NameAndModifier[];
   Senses: string[];
   Languages: string[];
+  /** The 2024 "Gear" line; absent from the 2014 layout, which has no such line. */
+  Gear?: string[];
   Challenge: string;
   Xp?: number;
   Traits: NameAndContent[];

@@ -181,6 +181,15 @@ test("tidbit lists: skills, resistances, vulnerabilities, senses, languages, CR 
   assert.equal(fraction.Xp, 25);
 });
 
+test("gear: the 2024 equipment line, absent from a block that carries none", () => {
+  const block = parse(tidbit("Gear", "Chain Mail, Shield, Javelin (3)"));
+  assert.deepEqual(block.Gear, ["Chain Mail", "Shield", "Javelin (3)"]);
+
+  // Most creatures have no Gear line at all, and DDB writes "--" for some that do.
+  assert.deepEqual(parse(DRAGON_STATS).Gear, []);
+  assert.deepEqual(parse(tidbit("Gear", "--")).Gear, []);
+});
+
 test("immunities: semicolon splits damage from condition, tooltips mark condition-only, plain lists are damage", () => {
   const both = parse(tidbit("Immunities", "Fire; Frightened, Poisoned"));
   assert.deepEqual(both.DamageImmunities, ["Fire"]);

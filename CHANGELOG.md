@@ -2,8 +2,11 @@
 
 All notable changes to OpenFray Importer are documented here.
 
-## [1.0.1]
+## [1.0.1] (2026-08-24)
 
+- The Gear line of a 2024 stat block now imports. A Bandit Captain arrives carrying its
+  studded leather, scimitar and daggers, where before the equipment was read off the page
+  and dropped. OpenFray lists it beside the block; carrying it does nothing on its own.
 - 2024 monsters with a negative Initiative imported as 5e instead of 5.5. D&D Beyond
   writes negative numbers with a Unicode minus sign that the parser could not read.
   The Beholder Zombie is one, along with every creature of Dexterity 9 or lower.

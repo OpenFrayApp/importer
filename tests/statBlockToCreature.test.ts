@@ -87,6 +87,17 @@ test("2024 statblock: identity, defenses, senses, edition, initiative", () => {
   assert.equal(c.cr, 17);
 });
 
+test("2024 gear: the equipment line travels; nothing is written when there is none", () => {
+  const armed = statBlockToCreature(
+    statBlock({ Name: "Bandit Captain", Gear: ["Studded Leather Armor", "Scimitar", " "] }),
+  );
+  assert.deepEqual(armed.gear, ["Studded Leather Armor", "Scimitar"]);
+
+  // A 2014 block has no Gear line, and a 2024 one that lists none scrapes to [].
+  assert.equal(statBlockToCreature(statBlock({ Name: "Goblin" })).gear, undefined);
+  assert.equal(statBlockToCreature(statBlock({ Name: "Goblin", Gear: [] })).gear, undefined);
+});
+
 test("2024 actions: attack damage components, save + recharge, legendary", () => {
   const c = statBlockToCreature(
     statBlock({

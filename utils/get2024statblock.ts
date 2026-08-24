@@ -46,6 +46,7 @@ export function get2024StatBlock(
     Skills: getDelimitedModifiers(statBlockElement, "Skills"),
     Senses: getDelimitedStrings(statBlockElement, "Senses"),
     Languages: getDelimitedStrings(statBlockElement, "Languages"),
+    Gear: getDelimitedStrings(statBlockElement, "Gear"),
     Challenge: getChallenge(statBlockElement),
     Xp: getXp(statBlockElement),
     Traits: getPowers(statBlockElement, "Traits"),

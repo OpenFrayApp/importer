@@ -631,6 +631,9 @@ export function statBlockToCreature(sb: StatBlock, opts: ConvertOptions = {}): C
   creature.immunities = cleanList(sb.DamageImmunities);
   creature.vulnerabilities = cleanList(sb.DamageVulnerabilities);
   creature.conditionImmunities = cleanList(sb.ConditionImmunities);
+  // The 2024 Gear line ("Chain Mail, Shield"). OpenFray keeps it display-only — the
+  // console doesn't model equipment — so the entries travel as DDB wrote them.
+  creature.gear = cleanList(sb.Gear);
 
   const cr = parseCr(sb.Challenge);
   if (cr != null) creature.cr = cr;
