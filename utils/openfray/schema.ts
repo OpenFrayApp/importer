@@ -1,6 +1,10 @@
-// OpenFray schema (subset) — the shapes this importer produces. Mirrors
-// openfray/src/schema/{creature,action,primitives}.ts. Kept in sync by hand; only
-// the fields the converter emits are included.
+// OpenFray schema — the shapes this importer produces. Mirrors the console's
+// src/schema/{creature,action,primitives,license}.ts, kept in sync by hand.
+//
+// The whole `Creature` is mirrored, including the fields the converter never writes:
+// a field left out of this copy is a field nobody notices the console has grown, and
+// the console drops anything its own schema doesn't name. Each unwritten field says
+// who fills it in instead.
 
 export type Ability = "str" | "dex" | "con" | "int" | "wis" | "cha";
 export type AbilityScores = Record<Ability, number>;
@@ -72,6 +76,18 @@ export interface Senses {
 export type ContentSource = string;
 export type Edition = "5.0" | "5.5";
 
+/** How a stat block may be reused. Not written here: the console assumes one from the
+ *  source book on paste — all rights reserved, unless the source names the free rules. */
+export type ContentLicense =
+  | "cc0-1.0"
+  | "cc-by-4.0"
+  | "cc-by-sa-4.0"
+  | "cc-by-nc-4.0"
+  | "cc-by-nc-sa-4.0"
+  | "ogl-1.0a"
+  | "reserved"
+  | "unstated";
+
 export type ActionKind = "melee" | "ranged" | "save" | "utility";
 export type SaveOutcome = "half" | "none" | "negates";
 
@@ -117,7 +133,8 @@ export interface Trait {
 
 export type SpellUsage =
   | { type: "atWill" }
-  | { type: "perDay"; per: number }
+  /** `shared` marks one pool between the group's spells; the default is N uses each. */
+  | { type: "perDay"; per: number; shared?: boolean }
   | { type: "slots"; level: number };
 
 export type SpellLevel = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
@@ -148,13 +165,33 @@ export interface Spellcasting {
 
 export interface LegendaryActions {
   perRound: number;
+  /** The higher per-round budget while the creature is in its lair, when it has one. */
+  perRoundLair?: number;
   actions: Action[];
+}
+
+/** A recharge / x-per-day ability tracked on its own. Not written here: DDB writes these
+ *  into an action's name ("Fire Breath (Recharge 5-6)"), which becomes `Action.recharge`. */
+export interface LimitedUse {
+  id: string;
+  name: string;
+  recharge: Recharge;
+  action: Action;
 }
 
 export interface Creature {
   id: string;
   source: ContentSource;
   edition?: Edition;
+  /** Page in the source document. Not written here: DDB's page number stays in `source`. */
+  sourcePage?: number;
+  /** The compendium entry this was built from. Not written here, and never guessed at:
+   *  a scrape is its own creature, not a derivative of one the console ships. */
+  derivedFrom?: string;
+  license?: ContentLicense;
+  /** Brought in from outside the console. Not written here: the console sets it on every
+   *  paste, and it is what stops an imported stat block reaching a public link. */
+  imported?: boolean;
   name: string;
   size: Size;
   type: string;
@@ -175,8 +212,13 @@ export interface Creature {
   immunities?: string[];
   vulnerabilities?: string[];
   conditionImmunities?: string[];
+  /** Carried equipment from the 2024 Gear line. Reference/display only. */
+  gear?: string[];
   cr?: number;
   xp?: number;
+  /** The XP award while the creature is in its lair. Not written here: DDB's CR line
+   *  carries one XP figure, and the lair one is prose inside the lair-actions section. */
+  xpLair?: number;
   traits?: Trait[];
   actions?: Action[];
   bonusActions?: Action[];
@@ -184,6 +226,7 @@ export interface Creature {
   legendaryActions?: LegendaryActions;
   lairActions?: Action[];
   spellcasting?: Spellcasting;
+  limitedUse?: LimitedUse[];
   legendaryResistance?: number;
   legendaryResistanceLair?: number;
 }
