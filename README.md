@@ -133,6 +133,15 @@ browser and reformats it into OpenFray's schema on your machine. Game content
 remains the property of its respective rights holders, and you are responsible for
 using it in accordance with D&D Beyond's Terms of Use and applicable copyright law.
 
+## Before contributing
+
+Read [AGENTS.md](./AGENTS.md) and the shared
+[Contributor workflow](https://github.com/OpenFrayApp/openfray/blob/main/docs/development/contributor-workflow.md).
+Use [Verification commands](https://github.com/OpenFrayApp/openfray/blob/main/docs/development/verification.md)
+for this repository's check scope, and
+[Repository file policy](https://github.com/OpenFrayApp/openfray/blob/main/docs/development/repository-files.md)
+for private local files.
+
 ## License
 
 Released under the [MIT License](./LICENSE).
